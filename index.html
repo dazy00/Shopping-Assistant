@@ -194,6 +194,22 @@
       {id:'sku-110', name:'Eco Tote', price:699, category:'bag', tags:['eco','minimal'], emoji:'👜'},
       {id:'sku-111', name:'Studio Headphones', price:4599, category:'tech', tags:['modern','streetwear'], emoji:'🎧'},
       {id:'sku-112', name:'Oxford Shoes', price:4999, category:'formal-shoes', tags:['classic','formal'], emoji:'🥿'},
+      {id:'sku-112', name:'Oxford Shoes', price:4999, category:'formal-shoes', tags:['classic','formal'], emoji:'🥿'},
+      {id:'sku-113', name:'Trail Blazer Jacket', price:4299, category:'jacket', tags:['outdoor','sporty','durable'], emoji:'🥾'},
+      {id:'sku-114', name:'Zen Linen Shirt', price:1899, category:'shirt', tags:['eco','casual','minimal'], emoji:'👔'},
+      {id:'sku-115', name:'Pulse Smartband', price:2599, category:'tech', tags:['modern','fitness'], emoji:'📱'},
+      {id:'sku-116', name:'Aurora Maxi Dress', price:4799, category:'dress', tags:['elegant','boho','luxury'], emoji:'👗'},
+      {id:'sku-117', name:'Canvas Messenger Bag', price:2499, category:'bag', tags:['casual','streetwear','durable'], emoji:'👜'},
+      {id:'sku-118', name:'Summit Hiking Boots', price:3899, category:'boots', tags:['outdoor','sporty','durable'], emoji:'🥾'},
+      {id:'sku-119', name:'Velvet Evening Gown', price:7299, category:'dress', tags:['luxury','classic','elegant'], emoji:'👠'},
+      {id:'sku-120', name:'Urban Snapback Cap', price:799, category:'accessory', tags:['streetwear','casual'], emoji:'🧢'},
+      {id:'sku-121', name:'Solar Charger', price:1599, category:'tech', tags:['eco','outdoor','modern'], emoji:'🔋'},
+      {id:'sku-122', name:'Woolen Scarf', price:1299, category:'accessory', tags:['classic','winter','cozy'], emoji:'🧣'},
+      {id:'sku-123', name:'Leather Wallet', price:2199, category:'accessory', tags:['classic','luxury','minimal'], emoji:'👛'},
+      {id:'sku-124', name:'Yoga Flex Pants', price:1499, category:'pants', tags:['sporty','casual','eco'], emoji:'🧘'},
+      {id:'sku-125', name:'Retro Sunglasses', price:1799, category:'accessory', tags:['vintage','streetwear','bold'], emoji:'🕶️'},
+      {id:'sku-126', name:'Comfy Slippers', price:999, category:'footwear', tags:['casual','cozy'], emoji:'🥿'},
+      {id:'sku-127', name:'Auric Pendant', price:3299, category:'jewelry', tags:['luxury','minimal','elegant'], emoji:'💎'}
     ];
 
     // -------- State --------
@@ -459,7 +475,7 @@
         const ok = data.every(x=> x.id && x.name && typeof x.price==='number' && x.category && Array.isArray(x.tags));
         if(!ok) throw new Error('Each item must include id, name, price(number), category, tags(array)');
         CATALOG = data; catalogModal.close();
-        const recs = recommend(state.prefs, 6); renderProducts(recs);
+        const recs = recommend(state.prefs, 24); renderProducts(recs);
         reply('Catalog loaded! I\'ll use it for future recommendations.');
       }catch(err){
         alert('Could not parse catalog: ' + err.message);
@@ -469,5 +485,6 @@
   </script>
 </body>
 </html>
+
 
 
