@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ShopEase</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"> 
+
+  <style>
+    /* Global */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f7f7f7;
+    }
+
+    /* HEADER */
+    header {
+      background: rgb(38, 4, 26);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: rgb(247, 238, 52);
+      cursor: pointer;
+    }
+
+    .search-bar {
+      flex: 1;
+      margin: 0 20px;
+      display: flex;
+      max-width: 500px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 4px 0 0 4px;
+      outline: none;
+    }
+
+    .search-bar button {
+      background: rgb(10, 202, 250);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .search-bar button:hover {
+      background: rgb(5, 150, 200);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 25px;
+    }
+
+    .nav-links a {
+      color: rgb(247, 238, 52);
+      text-decoration: none;
+      font-size: 16px;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: rgb(245, 20, 177);
+    }
+
+    .icons {
+      display: flex;
+      gap: 15px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    @media(max-width: 768px) {
+      .search-bar {
+        display: none;
+      }
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        background: rgb(38, 4, 26);
+        flex-direction: column;
+        padding: 10px;
+      }
+      .nav-links.show {
+        display: flex;
+      }
+      .hamburger {
+        display: block;
+      }
+    }
+
+    /* PRODUCT SECTIONS */
+    section {
+      padding: 40px 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    section h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .product {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .product:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    }
+
+    .product img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+
+    .product h3 {
+      margin: 10px 0;
+      font-size: 18px;
+    }
+
+    .product p {
+      margin: 5px 0;
+      color: #555;
+    }
+
+    .product button {
+      margin-top: 10px;
+      background: rgb(10, 202, 250);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      transition:  0.3s;
+    }
+
+    .product button:hover {
+      background: rgb(5, 150, 200);
+    }
+
+    /* FOOTER */
+    footer {
+      background: rgb(38, 4, 26);
+      color: white;
+      padding: 30px 20px;
+      margin-top: 40px;
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .footer-content h4 {
+      margin-bottom: 10px;
+      color: rgb(247, 238, 52);
+    }
+
+    .footer-content a {
+      color: #ccc;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 5px;
+      transition: color 0.3s;
+    }
+
+    .footer-content a:hover {
+      color: rgb(245, 20, 177);
+    }
+
+    .footer-bottom {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #aaa;
+    }
+
+</style>
+
+
+   
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="navbar">
+      <div class="logo">ShopEase</div>
+
+      <div class="search-bar">
+        <input type="text" placeholder="Search for products...">
+        <button><i class="fa fa-search"></i></button>
+      </div>
+
+      <nav class="nav-links" id="menu">
+        <a href="#home">Home</a>
+        <a href="#electronics">Electronics</a>
+        <a href="#fashion">Fashion</a>
+        <a href="#homeAppliances">Home Appliances</a>
+        <a href="#grocery">Grocery</a>
+      </nav>
+
+      <div class="icons">
+        <i class="fa fa-user"></i>
+        <i class="fa fa-shopping-cart"></i>
+        <i class="fa fa-bars hamburger" id="hamburger"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- SECTIONS -->
+  <section id="electronics">
+    <h2>Electronics</h2>
+    <div class="products">
+      <div class="product" id ="laptop">
+        <div class="product-card">
+        <img src="Laptop.jpg">
+        <h3>Laptop</h3>
+        <p>$800</p>
+        <button  class ="add-to-cart" data-product ="Laptop">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="product" id ="smartphone">
+        <div class="product-card">
+        <img src="Smartphone.jpg">
+        <h3>Smartphone</h3>
+        <p>$500</p>
+        <button  class ="add-to-cart" data-product ="Smartphone">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+
+  <section id="fashion" >
+    <h2>Fashion</h2>
+    <div class="products">
+      <div class="product" id ="jacket">
+        <div class="product-card">
+        <img src = "jackets.jpg" height ="500px">
+        <h3>Jacket</h3>
+        <p>$70</p>
+        <button class ="add-to-cart" data-product ="Jacket">Add to Cart</button>
+      </div>
+      </div>
+
+      <div class="product" id="dress">
+        <div class="product-card">
+        <img src="Dresses.jpg" alt="Dress" height ="500px">
+        <h3>Dress</h3>
+        <p>$90</p>
+        <button  class ="add-to-cart" data-product ="Dress">Add to Cart</button>
+      </div>
+    </div>
+    </div>
+  </section>
+
+
+  <section id="homeAppliances">
+    <h2>Home Appliances</h2>
+    <div class="products">
+      <div class="product" id="vaccum">
+        <div class="product-card">
+        <img src="Vaccum_Cleaner.jpg" alt="Vacuum Cleaner">
+        <h3>Vacuum Cleaner</h3>
+        <p>$150</p>
+        <button  class ="add-to-cart" data-product ="Vaccum Cleaner">Add to Cart</button>
+      </div>
+      </div>
+
+      <div class="product" id="blender">
+        <div class="product-card">
+        <img src="Blender.jpg" alt="Blender">
+        <h3>Blender</h3>
+        <p>$40</p>
+        <button  class ="add-to-cart" data-product ="Blender">Add to Cart</button>
+      </div>
+    </div>
+    </div>
+  </section>
+
+
+  <section id="grocery">
+    <h2>Grocery</h2>
+    <div class="products">
+      <div class="product" id="vegetables">
+        <div class="product-card">
+        <img src="Vegetables.jpg" alt="Vegetables">
+        <h3>Vegetables</h3>
+        <p>$20</p>
+        <button  class ="add-to-cart" data-product ="Vegetables">Add to Cart</button>
+      </div>
+      </div>
+
+      <div class="product" id="fruits">
+        <div class="product-card">
+        <img src="fruits.jpg" alt="Fruits">
+        <h3>Fruits</h3>
+        <p>$25</p>
+        <button  class ="add-to-cart" data-product ="Fruits">Add to Cart</button>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-content">
+      <div>
+        <h4>ShopEase</h4>
+        <p>Your one-stop shop for everything you need.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <a href="#electronics">Electronics</a>
+        <a href="#fashion">Fashion</a>
+        <a href="#homeAppliances">Home Appliances</a>
+        <a href="#grocery">Grocery</a>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>Email: support@shopease.com</p>
+        <p>Phone: +1 234 567 890</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2025 ShopEase. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const hamburger = document.getElementById('hamburger');
+    const menu = document.getElementById('menu');
+    hamburger.addEventListener('click', () => {
+      menu.classList.toggle('show');
+    });
+  </script>
+
+<script>
+  document.querySelectorAll(".add-to-cart").forEach(button => {
+    button.addEventListener("click", () => {
+      let product = button.getAttribute("data-product");
+
+      // Load current cart from localStorage
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+      // Add product
+      cart.push(product);
+
+      // Save back
+      localStorage.setItem("cart", JSON.stringify(cart));
+
+      // Show feedback
+      button.textContent = "Added to Cart ✔";
+      button.disabled = true;
+    });
+  });
+</script>
+
+
+</body>
+</html>

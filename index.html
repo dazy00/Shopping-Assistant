@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Conversational Shopping Assistant</title>
+  <style>
+    :root{
+      --bg: 245 245 250;
+      --fg: 20 22 35;
+      --muted: 110 114 128;
+      --accent: 88 80 236;
+      --accent2: 240 111 150;
+      --card: 255 255 255;
+      --good: 12 131 72;
+      --bad: 214 61 67;
+      --shadow: 20 20 40;
+      --radius-xl: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: rgb(var(--fg));
+      background: linear-gradient(135deg, rgba(var(--accent),0.08), rgba(var(--accent2),0.08)) fixed,
+                  radial-gradient(1200px 600px at 10% -10%, rgba(var(--accent),0.14), transparent),
+                  radial-gradient(1200px 600px at 110% 110%, rgba(var(--accent2),0.14), transparent),
+                  rgb(var(--bg));
+      min-height:100vh; display:flex; flex-direction:column;
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: saturate(1.2) blur(12px);
+      background: color-mix(in oklab, white 70%, transparent);
+      border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    .container{max-width:1200px; margin:0 auto; padding:16px;}
+    .nav{display:flex; align-items:center; gap:12px;}
+    .logo{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px}
+    .logo .bubble{width:28px; height:28px; border-radius:9px; background:linear-gradient(145deg, rgb(var(--accent)), rgb(var(--accent2))); box-shadow: 0 10px 30px rgba(var(--accent),.25);}
+    .spacer{flex:1}
+    .pill{padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.05); font-size:12px; color:rgb(var(--muted));}
+
+    main{flex:1}
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:18px; padding:18px;}
+    @media (max-width: 980px){.grid{grid-template-columns:1fr; padding:12px}}
+
+    .card{background: color-mix(in oklab, white 90%, transparent); border:1px solid rgba(0,0,0,.06); border-radius: var(--radius-xl);
+      box-shadow: 0 10px 30px rgba(var(--shadow), .06);
+    }
+    .card .title{padding:16px 18px; border-bottom:1px solid rgba(0,0,0,.06); font-weight:700;}
+
+    /* Chat */
+    .chat{display:flex; flex-direction:column; height:min(75vh, 720px);}
+    .chat-body{flex:1; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:12px; scroll-behavior:smooth}
+    .msg{display:flex; gap:10px; align-items:flex-end;}
+    .msg .avatar{flex:0 0 34px; width:34px; height:34px; border-radius:11px; background:linear-gradient(180deg, rgba(var(--accent),.9), rgba(var(--accent2),.9)); color:white; display:grid; place-items:center; font-weight:800}
+    .msg.user .avatar{background:rgba(0,0,0,.1); color:rgb(var(--fg))}
+    .bubble{max-width:80%; padding:12px 14px; border-radius:14px; position:relative; line-height:1.35; background:white; border:1px solid rgba(0,0,0,.06); box-shadow: 0 4px 20px rgba(0,0,0,.04)}
+    .msg.user .bubble{background: #111827; color:white; border:1px solid rgba(255,255,255,.08)}
+    @media (max-width:600px){.bubble{max-width:100%}}
+    .meta{font-size:12px; color: rgb(var(--muted)); margin-top:6px}
+    .typing{display:inline-block; min-width:22px}
+    .typing span{display:inline-block; width:5px; height:5px; margin-right:4px; background:currentColor; opacity:.35; border-radius:999px; animation: blink 1.2s infinite}
+    .typing span:nth-child(2){animation-delay:.15s}
+    .typing span:nth-child(3){animation-delay:.3s}
+    @keyframes blink{0%,80%,100%{opacity:.2} 40%{opacity:1}}
+
+    .chat-input{display:flex; gap:10px; padding:12px; border-top:1px solid rgba(0,0,0,.06)}
+    .textbox{flex:1; display:flex; gap:10px; background:white; border:1px solid rgba(0,0,0,.08); border-radius:14px; padding:10px 12px; align-items:center; box-shadow:0 6px 18px rgba(0,0,0,.04)}
+    .textbox input{flex:1; border:none; outline:none; font-size:15px; background:transparent}
+    .actions{display:flex; gap:8px}
+    .btn{border:none; padding:10px 14px; border-radius:12px; font-weight:650; cursor:pointer; transition: transform .06s ease, box-shadow .2s ease, opacity .2s ease; box-shadow: 0 8px 18px rgba(0,0,0,.06)}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{background:linear-gradient(135deg, rgb(var(--accent)), rgb(var(--accent2))); color:white}
+    .btn.ghost{background:rgba(0,0,0,.06)}
+
+    /* Products */
+    .products-wrap{padding:8px 14px 18px}
+    .toolbar{display:flex; gap:10px; flex-wrap:wrap; padding:12px 2px 0}
+    .chip{padding:8px 12px; background:rgba(0,0,0,.06); border-radius:999px; font-size:12px; cursor:pointer; user-select:none}
+    .chip.active{background:rgba(var(--accent), .15); outline:1px solid rgba(var(--accent), .3)}
+
+    .grid-products{display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-top:12px}
+    @media (max-width: 1200px){.grid-products{grid-template-columns: repeat(2, 1fr)}}
+    @media (max-width: 720px){.grid-products{grid-template-columns: 1fr}}
+
+    .product{display:flex; gap:12px; padding:12px; border-radius:16px; background:white; border:1px solid rgba(0,0,0,.06); box-shadow: 0 12px 24px rgba(0,0,0,.05); align-items:center}
+    .p-icon{flex:0 0 64px; width:64px; height:64px; border-radius:14px; display:grid; place-items:center; font-size:28px; background:radial-gradient(circle at 30% 30%, rgba(var(--accent),.25), transparent 60%), rgba(0,0,0,.04)}
+    .p-body{flex:1}
+    .p-title{font-weight:750}
+    .tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px}
+    .tag{font-size:11px; padding:6px 8px; border-radius:999px; background:rgba(0,0,0,.05)}
+    .p-price{font-weight:800}
+    .p-cta{display:flex; gap:8px; align-items:center}
+
+    /* Cart */
+    .cart{padding:12px 16px}
+    .cart-item{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px dashed rgba(0,0,0,.08)}
+    .cart-total{display:flex; justify-content:space-between; padding-top:12px; font-weight:800}
+
+    dialog{border:none; border-radius:16px; padding:0; width:min(720px, 96vw);}
+    dialog::backdrop{background: rgba(0,0,0,.3)}
+    .modal{padding:18px}
+    .modal h3{margin:0 0 8px}
+    .modal textarea{width:100%; min-height:200px; border:1px solid rgba(0,0,0,.1); border-radius:12px; padding:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+  </style>
+
+  <style>
+  </style>
+</head>
+<body style="background-image: url('frontend/shop.jpg'); background-size: cover; background-repeat: no-repeat; background-attachment: fixed;">
+  <header>
+    <div class="container nav">
+      <div class="logo"><div class="bubble"></div> ShopTalk <span class="pill">Conversational Shopping Assistant</span></div>
+      <div class="spacer"></div>
+      <button class="btn ghost" id="loadCatalogBtn">Load Catalog</button>
+      <button class="btn primary" id="autoCartBtn">Auto‑Generate Cart</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <!-- Chat -->
+      <section class="card chat" aria-label="Chat with assistant">
+        <div class="title">Chat</div>
+        <div id="chatBody" class="chat-body" role="log" aria-live="polite" aria-relevant="additions"></div>
+        <div class="chat-input">
+          <div class="textbox" role="group" aria-label="Message composer">
+            <input id="message" type="text" placeholder="Tell me your budget, style & what you need (e.g., ‘sneakers under 3000, minimal streetwear’)…" autocomplete="off" />
+          </div>
+          <div class="actions">
+            <button id="send" class="btn primary" aria-label="Send">Send</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Products & Cart -->
+      <section class="card" aria-label="Recommendations and cart">
+        <div class="title">Recommendations</div>
+        <div class="products-wrap">
+  <div class="toolbar">
+    <div class="chip active" data-style="minimal">Minimal</div>
+    <div class="chip" data-style="sporty">Sporty</div>
+    <div class="chip" data-style="classic">Classic</div>
+    <div class="chip" data-style="streetwear">Streetwear</div>
+    <div class="chip" data-style="boho">Boho</div>
+    <div class="chip" data-style="luxury">Luxury</div>
+    <div class="chip" data-style="eco">Eco</div>
+  </div>
+  <div id="products" class="grid-products" aria-live="polite"></div>
+</div>
+
+<!-- 🔹 New Browse Categories Section -->
+<div class="title">Browse Categories</div>
+<div class="toolbar">
+  <div onclick="window.location.href='frontend/catalog.html#electronics'" class="chip">Electronics</div>
+  <div onclick="window.location.href='frontend/catalog.html#fashion'" class="chip">Fashion</div>
+  <div onclick="window.location.href='frontend/catalog.html#homeAppliances'" class="chip">Home Appliances</div>
+  <div onclick="window.location.href='frontend/catalog.html#grocery'" class="chip">Grocery</div>
+</div>
+
+        <div class="title">Cart</div>
+        <div class="cart" id="cart"></div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="catalogModal">
+    <div class="modal">
+      <h3>Load Catalog JSON</h3>
+      <p style="margin:0 0 8px; color:rgb(var(--muted))">Paste an array of products. Each item should include: <code>{ id, name, price, category, tags[], emoji }</code>.</p>
+      <textarea id="catalogInput" placeholder='[
+  {"id":"sku-101","name":"Nimbus Sneakers","price":3999,"category":"sneakers","tags":["minimal","streetwear","sporty"],"emoji":"👟"}
+]'></textarea>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
+        <button class="btn ghost" onclick="catalogModal.close()">Cancel</button>
+        <button class="btn primary" id="catalogSave">Use this catalog</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    // ---------- Sample catalog (can be replaced via modal) ----------
+    let CATALOG = [
+      {id:'sku-101', name:'Nimbus Sneakers', price:3999, category:'sneakers', tags:['minimal','streetwear','sporty'], emoji:'👟'},
+      {id:'sku-102', name:'Aero Runner', price:2999, category:'sneakers', tags:['sporty','bold'], emoji:'🥇'},
+      {id:'sku-103', name:'Calm Cotton Tee', price:899, category:'tshirt', tags:['minimal','eco','casual'], emoji:'👕'},
+      {id:'sku-104', name:'Selvedge Denim', price:3499, category:'jeans', tags:['classic','streetwear','durable'], emoji:'👖'},
+      {id:'sku-105', name:'Silhouette Blazer', price:5499, category:'blazer', tags:['formal','minimal','classic'], emoji:'🧥'},
+      {id:'sku-106', name:'Everyday Backpack', price:1999, category:'bag', tags:['minimal','eco','casual'], emoji:'🎒'},
+      {id:'sku-107', name:'Chrono Watch', price:6999, category:'accessory', tags:['classic','luxury'], emoji:'⌚'},
+      {id:'sku-108', name:'Cloud Hoodie', price:2299, category:'hoodie', tags:['streetwear','casual','minimal'], emoji:'🧢'},
+      {id:'sku-109', name:'Serene Dress', price:3899, category:'dress', tags:['minimal','boho'], emoji:'👗'},
+      {id:'sku-110', name:'Eco Tote', price:699, category:'bag', tags:['eco','minimal'], emoji:'👜'},
+      {id:'sku-111', name:'Studio Headphones', price:4599, category:'tech', tags:['modern','streetwear'], emoji:'🎧'},
+      {id:'sku-112', name:'Oxford Shoes', price:4999, category:'formal-shoes', tags:['classic','formal'], emoji:'🥿'},
+    ];
+
+    // -------- State --------
+    const state = {
+      prefs: { budget: null, styles: new Set(['minimal']), categories: new Set(), dislikes: new Set() },
+      cart: [],
+      history: []
+    };
+
+    const chatBody = document.getElementById('chatBody');
+    const input = document.getElementById('message');
+    const sendBtn = document.getElementById('send');
+    const productsEl = document.getElementById('products');
+    const cartEl = document.getElementById('cart');
+
+    // ---------- Utils ----------
+    const currency = (v) => `₹${v.toLocaleString('en-IN')}`;
+
+    const STYLE_KEYWORDS = ['minimal','sporty','classic','streetwear','boho','luxury','eco','formal','bold','modern','casual','durable'];
+    const CATEGORY_ALIASES = new Map([
+      ['shoe','sneakers'], ['sneaker','sneakers'], ['runner','sneakers'],
+      ['tee','tshirt'], ['t-shirt','tshirt'], ['hoodies','hoodie'], ['coat','blazer'],
+      ['bag','bag'], ['backpack','bag'], ['tote','bag'], ['watch','accessory'], ['headphone','tech']
+    ]);
+
+    function normalizeCategory(word){
+      word = word.toLowerCase();
+      if (CATEGORY_ALIASES.has(word)) return CATEGORY_ALIASES.get(word);
+      return word;
+    }
+
+    function extractIntent(text){
+      const t = text.toLowerCase();
+      const styles = new Set([...STYLE_KEYWORDS.filter(k => t.includes(k))]);
+      const categories = new Set();
+
+      // category keywords (simple split + alias)
+      t.split(/[^a-z-]+/).forEach(w=>{ if(!w) return; const c = normalizeCategory(w); const cats = CATALOG.map(p=>p.category); if(cats.includes(c)) categories.add(c) });
+
+      // price / budget
+      let budget = null;
+      const numbers = [...t.matchAll(/(?:under|below|less than|underneath|upto|up to|under rs|below rs)?\s*(₹|rs\.?\s*)?(\d{2,6})(?:\s*to\s*(\d{2,6}))?/g)];
+      if(numbers.length){
+        const last = numbers[numbers.length-1];
+        const a = parseInt(last[2],10);
+        const b = last[3] ? parseInt(last[3],10) : null;
+        budget = b ? Math.max(a,b) : a;
+      }
+
+      // dislikes (e.g., "no logos", "not sporty")
+      const dislikes = new Set();
+      STYLE_KEYWORDS.forEach(k=>{ if(t.includes('not '+k) || t.includes('no '+k)) dislikes.add(k) })
+
+      return { styles, categories, budget, dislikes };
+    }
+
+    function scoreProduct(p, prefs){
+      let score = 0; const reasons = [];
+      // style
+      const styleMatches = [...prefs.styles].filter(s => p.tags.includes(s));
+      score += styleMatches.length * 2; if(styleMatches.length) reasons.push(`style: ${styleMatches.join(', ')}`);
+      // category
+      if(prefs.categories.size && prefs.categories.has(p.category)){ score += 2; reasons.push('category match'); }
+      // budget friendliness
+      if(prefs.budget){
+        const diff = p.price - prefs.budget;
+        if(diff <= 0){ score += 2; reasons.push('under budget'); }
+        else { score += Math.max(0, 2 - diff/2000); reasons.push('slightly over'); }
+      }
+      // penalties
+      [...prefs.dislikes].forEach(d=>{ if(p.tags.includes(d)) score -= 2 });
+      return {score, reasons};
+    }
+
+    function recommend(prefs, limit=6){
+      const ranked = CATALOG.map(p=>{ const r = scoreProduct(p, prefs); return {...p, _score:r.score, _reasons:r.reasons} })
+                            .sort((a,b)=> b._score - a._score);
+      return ranked.slice(0, limit);
+    }
+
+    function renderProducts(list){
+      productsEl.innerHTML = '';
+      list.forEach(p=>{
+        const div = document.createElement('div');
+        div.className = 'product';
+        div.innerHTML = `
+          <div class="p-icon">${p.emoji || '🛍️'}</div>
+          <div class="p-body">
+            <div class="p-title">${p.name}</div>
+            <div class="tags">${p.tags.map(t=>`<span class='tag'>${t}</span>`).join('')}</div>
+            <div class="meta" title="Why this?">Match: ${p._reasons?.join(' • ') || 'popular'}</div>
+          </div>
+          <div class="p-cta">
+            <div class="p-price">${currency(p.price)}</div>
+            <button class="btn primary" aria-label="Add ${p.name} to cart">Add</button>
+          </div>`;
+        div.querySelector('button').addEventListener('click', ()=> addToCart(p));
+        productsEl.appendChild(div);
+      });
+    }
+
+    function renderCart(){
+      if(!state.cart.length){ cartEl.innerHTML = '<div class="meta">Your cart is empty.</div>'; return; }
+      let total = 0;
+      cartEl.innerHTML = '';
+      state.cart.forEach(item=>{
+        total += item.price;
+        const row = document.createElement('div');
+        row.className = 'cart-item';
+        row.innerHTML = `<div>${item.emoji || '🛍️'} ${item.name}</div>
+                         <div>${currency(item.price)} <button class='btn ghost' aria-label='Remove from cart'>Remove</button></div>`;
+        row.querySelector('button').addEventListener('click', ()=>{ state.cart = state.cart.filter(p=>p.id!==item.id); renderCart();});
+        cartEl.appendChild(row);
+      })
+      const totalRow = document.createElement('div');
+      totalRow.className = 'cart-total';
+      totalRow.innerHTML = `<div>Total</div><div>${currency(total)}</div>`;
+      cartEl.appendChild(totalRow);
+    }
+
+    function addToCart(p){
+      if(!state.cart.find(x=>x.id===p.id)) state.cart.push(p);
+      renderCart();
+      toast(`${p.name} added to cart`);
+    }
+
+    // ---------- Chat rendering ----------
+    function addMsg({from='bot', html=''}){
+      const wrap = document.createElement('div'); wrap.className = 'msg ' + (from==='user'?'user':'bot');
+      const avatar = `<div class='avatar'>${from==='user'? '🙂' : '✨'}</div>`;
+      const bubble = `<div class='bubble'>${html}</div>`;
+      wrap.innerHTML = avatar + bubble; chatBody.appendChild(wrap); chatBody.scrollTop = chatBody.scrollHeight;
+      return wrap.querySelector('.bubble');
+    }
+
+    function addTyping(){
+      return addMsg({from:'bot', html:`<span class='typing'><span></span><span></span><span></span></span>`});
+    }
+
+    async function reply(html){
+      const bubble = addTyping();
+      await new Promise(r=>setTimeout(r, 300 + Math.random()*200));
+      bubble.innerHTML = html;
+    }
+
+    // ---------- LLM-ish brain ----------
+    function updatePrefs(intent){
+      if(intent.budget) state.prefs.budget = intent.budget;
+      intent.styles.forEach(s=> state.prefs.styles.add(s));
+      intent.categories.forEach(c=> state.prefs.categories.add(c));
+      intent.dislikes.forEach(d=> state.prefs.dislikes.add(d));
+    }
+
+    function handleUserMessage(text){
+      const intent = extractIntent(text);
+      updatePrefs(intent);
+      const recs = recommend(state.prefs, 6);
+      renderProducts(recs);
+
+      const chips = [];
+      if(state.prefs.budget) chips.push(`budget ≈ ${currency(state.prefs.budget)}`)
+      if(state.prefs.styles.size) chips.push(`style: ${[...state.prefs.styles].join(', ')}`)
+      if(state.prefs.categories.size) chips.push(`category: ${[...state.prefs.categories].join(', ')}`)
+
+      const recHtml = `I used your ${chips.join(' • ') || 'preferences'} to shortlist these:<br/><br/>
+        ${recs.map(p=>`<div style='margin:0 0 8px'><b>${p.name}</b> — ${currency(p.price)}<br/><span class='meta'>${p._reasons.join(' • ')}</span> <button data-id='${p.id}' class='btn ghost' style='margin-left:8px'>Add</button></div>`).join('')}
+        <div class='meta' style='margin-top:8px'>Say things like “make it more sporty”, “under 3000”, “formal shoes”, or “not boho”.</div>`;
+
+      reply(recHtml).then(()=>{
+        // enable inline add buttons
+        chatBody.querySelectorAll("button[data-id]").forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            const p = CATALOG.find(x=>x.id===btn.dataset.id); if(p) addToCart(p);
+          })
+        })
+      });
+    }
+
+    // ---------- Auto cart + summary ----------
+    function autoGenerateCart(){
+      const budget = state.prefs.budget || 5000; // default fallback
+      const target = Math.max(2, Math.min(6, Math.floor(budget/1500)));
+      const recs = recommend(state.prefs, 12);
+      const picked = [];
+      let running = 0;
+      const seenCats = new Set();
+
+      for(const p of recs){
+        if(picked.length>=target) break;
+        if(seenCats.has(p.category)) continue; // variety
+        if(running + p.price <= (budget*1.1)){ picked.push(p); running += p.price; seenCats.add(p.category); }
+      }
+
+      if(!picked.length){
+        // fallback: cheapest good matches
+        const sorted = [...recs].sort((a,b)=> a.price - b.price);
+        for(const p of sorted){ if(running + p.price <= budget*1.1){ picked.push(p); running += p.price; if(picked.length>=target) break; } }
+      }
+
+      state.cart = picked; renderCart();
+
+      reply(`I built a smart cart (${picked.length} items, total ${currency(running)}). Want a summary? <button id='summarize' class='btn ghost' style='margin-left:6px'>Summarize</button>`)
+        .then(()=>{
+          const btn = chatBody.querySelector('#summarize');
+          if(btn) btn.addEventListener('click', ()=> summarizeCart());
+        })
+    }
+
+    function summarizeCart(){
+      if(!state.cart.length){ reply("Your cart is empty. Add a couple of items or ask me to auto‑generate one."); return; }
+      const total = state.cart.reduce((a,b)=>a+b.price,0);
+      const lines = state.cart.map(p=>`${p.name} (${currency(p.price)})`);
+      reply(`Here’s your cart summary:<br/><ul>${lines.map(l=>`<li>${l}</li>`).join('')}</ul><b>Total:</b> ${currency(total)}.<br/>You can say things like “swap the hoodie for something classic” or “keep it under ${currency((state.prefs.budget||total))}”.`)
+    }
+
+    // ---------- Toast ----------
+    let toastTimer;
+    function toast(text){
+      clearTimeout(toastTimer);
+      let t = document.getElementById('toast');
+      if(!t){
+        t = document.createElement('div'); t.id='toast';
+        t.style.cssText = 'position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:999px; box-shadow:0 14px 30px rgba(0,0,0,.25); z-index:50; opacity:0; transition:opacity .2s ease';
+        document.body.appendChild(t);
+      }
+      t.textContent = text; t.style.opacity = '1';
+      toastTimer = setTimeout(()=> t.style.opacity = '0', 1600);
+    }
+
+    // ---------- Event wiring ----------
+    sendBtn.addEventListener('click', ()=>{
+      const val = input.value.trim(); if(!val) return;
+      addMsg({from:'user', html: val}); input.value='';
+      handleUserMessage(val);
+    });
+    input.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); }
+    })
+
+    // Quick style chips
+    document.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+        chip.classList.add('active');
+        state.prefs.styles.add(chip.dataset.style);
+        const recs = recommend(state.prefs, 6); renderProducts(recs);
+        reply(`Okay, leaning more <b>${chip.dataset.style}</b>. Updated picks above.`);
+      })
+    })
+
+    // Auto‑cart
+    document.getElementById('autoCartBtn').addEventListener('click', autoGenerateCart);
+
+    // Load catalog modal
+    const catalogModal = document.getElementById('catalogModal');
+    document.getElementById('loadCatalogBtn').addEventListener('click', ()=> catalogModal.showModal());
+    document.getElementById('catalogSave').addEventListener('click', ()=>{
+      const txt = document.getElementById('catalogInput').value.trim();
+      if(!txt){ catalogModal.close(); return; }
+      try{
+        const data = JSON.parse(txt);
+        if(!Array.isArray(data)) throw new Error('Catalog should be an array');
+        const ok = data.every(x=> x.id && x.name && typeof x.price==='number' && x.category && Array.isArray(x.tags));
+        if(!ok) throw new Error('Each item must include id, name, price(number), category, tags(array)');
+        CATALOG = data; catalogModal.close();
+        const recs = recommend(state.prefs, 6); renderProducts(recs);
+        reply('Catalog loaded! I\'ll use it for future recommendations.');
+      }catch(err){
+        alert('Could not parse catalog: ' + err.message);
+      }
+    })
+
+  </script>
+</body>
+</html>
