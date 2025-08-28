@@ -80,7 +80,7 @@
     .chip{padding:8px 12px; background:rgba(0,0,0,.06); border-radius:999px; font-size:12px; cursor:pointer; user-select:none}
     .chip.active{background:rgba(var(--accent), .15); outline:1px solid rgba(var(--accent), .3)}
 
-    .grid-products{display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-top:12px}
+    .grid-products{display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:20px; margin-top:12px}
     @media (max-width: 20000px){.grid-products{grid-template-columns: repeat(2, 1fr)}}
     @media (max-width: 10000px){.grid-products{grid-template-columns: 1fr}}
 
@@ -103,6 +103,56 @@
     .modal{padding:18px}
     .modal h3{margin:0 0 8px}
     .modal textarea{width:100%; min-height:200px; border:1px solid rgba(0,0,0,.1); border-radius:12px; padding:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+
+
+    .gemini-msg {
+  background: #f0f4ff;
+  border: 1px solid #ccd9ff;
+  color: #222;
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  max-width: 75%;
+}
+
+.rec-title {
+  margin: 8px 0;
+  font-weight: bold;
+}
+
+.rec-item {
+  margin: 6px 0;
+}
+
+
+/* Base chat message */
+.msg {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 14px;
+  margin: 6px 0;
+  max-width: 70%;
+  clear: both;
+  line-height: 1.4;
+}
+
+/* Bot messages (left, blue) */
+.msg.bot {
+  background: #f0f4ff;
+  border: 1px solid #ccd9ff;
+  color: #222;
+  float: left;
+}
+
+/* User messages (right, green) */
+.msg.user {
+  background: #d4f8d4;
+  border: 1px solid #9ee09e;
+  color: #222;
+  float: right;
+  text-align: right;
+}
+
   </style>
 
   <style>
@@ -138,7 +188,7 @@
       <section class="card" aria-label="Recommendations and cart">
         <div class="title">Recommendations</div>
         <div class="products-wrap">
-  <div class="toolbar">
+  <div class="toolbar" id="styleChips">
     <div class="chip active" data-style="minimal">Minimal</div>
     <div class="chip" data-style="sporty">Sporty</div>
     <div class="chip" data-style="classic">Classic</div>
@@ -180,6 +230,68 @@
   </dialog>
 
   <script>
+
+  const GEMINI_API_KEY = "AIzaSyA552r-JJdxGmK16jAvEVy3d5pqXsELj4A"; 
+
+  async function callGemini(prompt) {
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }]
+        })
+      }
+    );
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Thanks , Here are a few recommendations ";
+  }
+
+
+  async function handleUserMessage(text) {
+  const intent = extractIntent(text);
+  updatePrefs(intent);
+
+  const recs = recommend(state.prefs, 6);
+  renderProducts(recs);
+
+  const geminiResponse = await callGemini(text);
+
+  // 🔹 First reply: Gemini message in a styled bubble
+  reply(`
+    <div class="gemini-msg">
+      💬 ${geminiResponse}
+    </div>
+  `);
+
+  // 🔹 Second reply: Product shortlist
+  const recHtml = `
+    <div class="rec-title">I shortlisted these for you:</div>
+    ${recs.map(p=>`
+      <div class="rec-item">
+        <b>${p.name}</b> — ${currency(p.price)}
+        <button data-id='${p.id}' class='btn ghost'>Add</button>
+      </div>
+    `).join('')}
+  `;
+
+  reply(recHtml).then(()=>{
+    chatBody.querySelectorAll("button[data-id]").forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const p = CATALOG.find(x=>x.id===btn.dataset.id); 
+        if(p) addToCart(p);
+      });
+    });
+  });
+}
+
+
+
+
+
+
     // ---------- Sample catalog (can be replaced via modal) ----------
     let CATALOG = [
       {id:'sku-101', name:'Nimbus Sneakers', price:3999, category:'sneakers', tags:['minimal','streetwear','sporty'], emoji:'👟'},
@@ -193,7 +305,6 @@
       {id:'sku-109', name:'Serene Dress', price:3899, category:'dress', tags:['minimal','boho'], emoji:'👗'},
       {id:'sku-110', name:'Eco Tote', price:699, category:'bag', tags:['eco','minimal'], emoji:'👜'},
       {id:'sku-111', name:'Studio Headphones', price:4599, category:'tech', tags:['modern','streetwear'], emoji:'🎧'},
-      {id:'sku-112', name:'Oxford Shoes', price:4999, category:'formal-shoes', tags:['classic','formal'], emoji:'🥿'},
       {id:'sku-112', name:'Oxford Shoes', price:4999, category:'formal-shoes', tags:['classic','formal'], emoji:'🥿'},
       {id:'sku-113', name:'Trail Blazer Jacket', price:4299, category:'jacket', tags:['outdoor','sporty','durable'], emoji:'🥾'},
       {id:'sku-114', name:'Zen Linen Shirt', price:1899, category:'shirt', tags:['eco','casual','minimal'], emoji:'👔'},
@@ -210,6 +321,7 @@
       {id:'sku-125', name:'Retro Sunglasses', price:1799, category:'accessory', tags:['vintage','streetwear','bold'], emoji:'🕶️'},
       {id:'sku-126', name:'Comfy Slippers', price:999, category:'footwear', tags:['casual','cozy'], emoji:'🥿'},
       {id:'sku-127', name:'Auric Pendant', price:3299, category:'jewelry', tags:['luxury','minimal','elegant'], emoji:'💎'}
+
     ];
 
     // -------- State --------
@@ -363,36 +475,48 @@
       intent.dislikes.forEach(d=> state.prefs.dislikes.add(d));
     }
 
-    function handleUserMessage(text){
-      const intent = extractIntent(text);
-      updatePrefs(intent);
-      const recs = recommend(state.prefs, 6);
-      renderProducts(recs);
+    async function handleUserMessage(text) {
+  const intent = extractIntent(text);
+  updatePrefs(intent);
 
-      const chips = [];
-      if(state.prefs.budget) chips.push(`budget ≈ ${currency(state.prefs.budget)}`)
-      if(state.prefs.styles.size) chips.push(`style: ${[...state.prefs.styles].join(', ')}`)
-      if(state.prefs.categories.size) chips.push(`category: ${[...state.prefs.categories].join(', ')}`)
+  const recs = recommend(state.prefs, 6);
+  renderProducts(recs);
 
-      const recHtml = `I used your ${chips.join(' • ') || 'preferences'} to shortlist these:<br/><br/>
-        ${recs.map(p=>`<div style='margin:0 0 8px'><b>${p.name}</b> — ${currency(p.price)}<br/><span class='meta'>${p._reasons.join(' • ')}</span> <button data-id='${p.id}' class='btn ghost' style='margin-left:8px'>Add</button></div>`).join('')}
-        <div class='meta' style='margin-top:8px'>Say things like “make it more sporty”, “under 3000”, “formal shoes”, or “not boho”.</div>`;
+  // 🔹 Ask Gemini for natural-language advice
+  const geminiResponse = await callGemini(
+    `User: ${text}\n\nHere is the product catalog:\n${CATALOG.map(
+      p => `${p.name} - ₹${p.price}, tags: ${p.tags.join(", ")}`
+    ).join("\n")}\n\nSuggest relevant products or shopping advice in a helpful way.`
+  );
 
-      reply(recHtml).then(()=>{
-        // enable inline add buttons
-        chatBody.querySelectorAll("button[data-id]").forEach(btn=>{
-          btn.addEventListener('click', ()=>{
-            const p = CATALOG.find(x=>x.id===btn.dataset.id); if(p) addToCart(p);
-          })
-        })
+  // 🔹 Combine Gemini's reply + interactive recommendations
+  const recHtml = `
+    ${geminiResponse}<br/><br/>
+    I shortlisted these for you:<br/>
+    ${recs.map(
+      p => `<div style='margin:0 0 8px'>
+              <b>${p.name}</b> — ${currency(p.price)}
+              <button data-id='${p.id}' class='btn ghost'>Add</button>
+            </div>`
+    ).join("")}
+  `;
+
+  reply(recHtml).then(() => {
+    chatBody.querySelectorAll("button[data-id]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const p = CATALOG.find(x => x.id === btn.dataset.id);
+        if (p) addToCart(p);
       });
-    }
+    });
+  });
+}
+
 
     // ---------- Auto cart + summary ----------
     function autoGenerateCart(){
       const budget = state.prefs.budget || 5000; // default fallback
       const target = Math.max(2, Math.min(6, Math.floor(budget/1500)));
-      const recs = recommend(state.prefs, 12);
+      const recs = recommend(state.prefs, 24);
       const picked = [];
       let running = 0;
       const seenCats = new Set();
@@ -475,17 +599,28 @@
         const ok = data.every(x=> x.id && x.name && typeof x.price==='number' && x.category && Array.isArray(x.tags));
         if(!ok) throw new Error('Each item must include id, name, price(number), category, tags(array)');
         CATALOG = data; catalogModal.close();
-        const recs = recommend(state.prefs, 24); renderProducts(recs);
+        const recs = recommend(state.prefs, 6); renderProducts(recs);
         reply('Catalog loaded! I\'ll use it for future recommendations.');
       }catch(err){
         alert('Could not parse catalog: ' + err.message);
       }
     })
 
+    function handleSend() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Show user bubble on right
+  addMsg({ from:'user', html: text });
+
+  // Handle bot logic
+  handleUserMessage(text);
+  input.value = "";
+}
+
+
   </script>
+
+
 </body>
 </html>
-
-
-
-
