@@ -19,5 +19,5 @@ It allows users to **chat naturally** about their preferences (budget, style, ca
 ## 🚀 Demo
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/shoptalk.git
+   git clone https://github.com/dazy00/shoptalk.git
    cd shoptalk
